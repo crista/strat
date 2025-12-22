@@ -55,14 +55,16 @@ class GeometricTransformerReLU(nn.Module):
             # --- 2. FFN (Dual-Gate) ---
             w_gate = torch.zeros(6, 6); b_gate = torch.zeros(6)
             
-            # Gate A (D5): Active on IsSub (D3)
-            w_gate[5, 3] = 10.0
-            b_gate[5] = -8.0
+            BIAS = -1.0
+            # Gate A (D5): Active on IsNum AND IsSub (D1, D3)
+            w_gate[5, 1] = 1.0
+            w_gate[5, 3] = 1.0
+            b_gate[5] = BIAS
             
-            # Gate B (D4): Active on Mixed (D2 and D3) or Pure Sub (D3)
-            w_gate[4, 2] = -5.0
-            w_gate[4, 3] = 5.0
-            b_gate[4] = 0.0
+            # Gate B (D0): Active on IsNum AND IsSub (D1, D3)
+            w_gate[0, 1] = 1.0
+            w_gate[0, 3] = 1.0
+            b_gate[0] = BIAS
             
             self.ffn.w_gate.weight.copy_(w_gate)
             self.ffn.w_gate.bias.copy_(b_gate)
@@ -70,24 +72,17 @@ class GeometricTransformerReLU(nn.Module):
             # --- VAL ---
             w_val = torch.zeros(6, 6); b_val = torch.zeros(6)
             w_val[5, 0] = 1.0
-            w_val[4, 0] = 1.0
+            w_val[0, 0] = -1.0 # CUT!!!!
             self.ffn.w_val.weight.copy_(w_val)
             self.ffn.w_val.bias.copy_(b_val)
             
-            # --- 4. READOUT (The Fix) ---
+            # --- 4. READOUT ---
             w_out = torch.zeros(1, 6)
             
-            # The Logic
-            w_out[0, 0] = 1.0        # Value
-            w_out[0, 5] = 2.0 / 3.0  # Gate A
-            w_out[0, 4] = -2.0 / 3.0 # Gate B
-            
-            # The Noise Cancellation
-            # Dim 4 has 'IsOp' flag (1.0). This adds a bias of -2/3 per op.
-            # We cancel it by adding +2/3 from IsAdd(2) and IsSub(3).
-            w_out[0, 2] = 2.0 / 3.0
-            w_out[0, 3] = 2.0 / 3.0
-            
+            # y = D0 - D5            
+            w_out[0, 0] = 1.0  # Value through Gate B
+            w_out[0, 5] = -1.0  # Value through Gate A
+
             self.W_out.weight.copy_(w_out)
 
     def forward(self, x):
@@ -98,7 +93,9 @@ class GeometricTransformerReLU(nn.Module):
         
         indices = torch.arange(seq_len, device=x.device)
         dist = indices.view(-1, 1) - indices.view(1, -1)
-        scores -= dist.float().abs()
+        # We need to amplify the difference between the closest operator
+        # and the ones before it. Hence a 10x factor here
+        scores -= (dist.float().abs() * 10.0)
         
         mask = torch.triu(torch.ones(seq_len, seq_len, device=x.device), diagonal=1)
         scores = scores.masked_fill(mask == 1, float('-inf'))
@@ -109,7 +106,7 @@ class GeometricTransformerReLU(nn.Module):
         
         combined = x + Z
         ffn_out = self.ffn(combined)
-        x_final = x + ffn_out
+        x_final = combined + ffn_out
         
         res = self.W_out(x_final.sum(dim=1))
         return res.squeeze(-1)
