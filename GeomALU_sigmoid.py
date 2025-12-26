@@ -1,8 +1,3 @@
-#
-# VATS
-# Crista V. Lopes
-#
-
 import torch
 import torch.nn as nn
 
@@ -54,7 +49,7 @@ class GeometricTransformer(nn.Module):
             w_v[2, 2] = 1.0; w_v[3, 3] = 1.0
             self.W_v.weight.copy_(w_v)
 
-            # --- 2. FFN ---
+            # --- 2. FFN (single gate) ---
             w_gate = torch.zeros(6, 6); b_gate = torch.zeros(6)
             
             # -- Gate --

@@ -1,7 +1,3 @@
-#
-# VATS
-# Crista V. Lopes
-#
 import torch
 
 def get_tensor_embedding(token):

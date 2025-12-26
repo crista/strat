@@ -1,7 +1,3 @@
-#
-# VATS
-# Crista V. Lopes
-#
 import torch
 import torch.nn as nn
 from test import run_simple_tests, run_robust_evaluation

@@ -1,7 +1,3 @@
-#
-# VATS
-# Crista V. Lopes
-#
 import torch
 import random
 from embeddings import get_tensor_embedding
