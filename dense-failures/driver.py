@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 import random
 import time
+import sys
+import os
+sys.path.append(os.path.abspath('../lite'))
 
 # --- IMPORTS ---
 # Ensure these files exist in your directory
