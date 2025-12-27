@@ -4,7 +4,7 @@ import random
 # --- Robust Evaluation Helper ---
 def generate_eval_batch_v2(num_samples, min_val, max_val):
     """
-    Generates a batch of data with specific value ranges for VATS12e.
+    Generates a batch of data with specific value ranges for STRAT12e.
     Returns:
         padded_ids: [Batch, Seq] (LongTensor)
         padded_vals: [Batch, Seq] (FloatTensor)
