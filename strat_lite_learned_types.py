@@ -5,7 +5,7 @@ import math
 import random
 import torch.optim as optim
 
-from test_e import run_simple_tests, run_robust_evaluation
+from test_strat_learned_types import run_simple_tests, run_robust_evaluation
 
 # --- 1. Learnable Embeddings (The "Meta-Learning" Component) ---
 class LearnableTypeEmbeddings(nn.Module):
@@ -44,9 +44,9 @@ class LearnableTypeEmbeddings(nn.Module):
         
         return x
 
-# --- 2. VATS GLU (The Router) ---
-# Unchanged from VATS12, but now routing learned latent types
-class VATSGLU(nn.Module):
+# --- 2. STRAT GLU (The Router) ---
+# Unchanged from STRAT12, but now routing learned latent types
+class STRATGLU(nn.Module):
     def __init__(self, d_model):
         super().__init__()
         
@@ -77,8 +77,8 @@ class VATSGLU(nn.Module):
         
         return gate * val
 
-# --- 3. The VATS-12e Model (Learned Types) ---
-class VATS12e(nn.Module):
+# --- 3. The STRAT-12e Model (Learned Types) ---
+class STRAT12e(nn.Module):
     def __init__(self):
         super().__init__()
         self.d_model = 6
@@ -95,7 +95,7 @@ class VATS12e(nn.Module):
         self.W_k = nn.Linear(n_ctrl, n_ctrl, bias=False)
         self.W_v = nn.Linear(n_ctrl, n_ctrl, bias=False)
         
-        self.ffn = VATSGLU(6) 
+        self.ffn = STRATGLU(6) 
         
         # Readout
         self.W_out = nn.Linear(6, 1, bias=False)
@@ -471,13 +471,13 @@ if __name__ == "__main__":
     random.seed(SEED)
     
     # Instantiate the learned embeddings model
-    model = VATS12e()
+    model = STRAT12e()
     
     # We use a slightly higher LR for the embeddings to help them separate quickly
     optimizer = optim.Adam(model.parameters(), lr=0.01)
     criterion = nn.MSELoss()
     
-    print("--- Starting Training (VATS12e - Learned Types) ---")
+    print("--- Starting Training (STRAT12e - Learned Types) ---")
     print("Initializing with random Type Embeddings...")
     
     for epoch in range(2001):
